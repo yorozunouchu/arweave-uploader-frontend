@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arweave File Upload</title>
+  </head>
+  <body>
+    <form id="uploadForm">
+      <input type="file" name="fileInput" />
+      <button type="submit">Upload</button>
+    </form>
+
+    <ul id="fileList"></ul>
+
+    <script type="module">
+      import arweave from "arweave";
+      import { TurboFactory } from "@ardrive/turbo-sdk/web";
+
+      document.getElementById("uploadForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const file = event.currentTarget.elements.fileInput.files[0];
+        if (file.size / 1024 > 100) return alert("File is bigger than 100 KiB!");
+
+        const turbo = TurboFactory.authenticated({
+          privateKey: await arweave.crypto.generateJWK(),
+        });
+
+        const uploadResult = await turbo.uploadFile({
+          fileStreamFactory: () => file.stream(),
+          fileSizeFactory: () => file.size,
+        });
+
+        const fileUrl = `https://arweave.developerdao.com/${uploadResult.id}`;
+        const liElement = document.createElement("li");
+        liElement.innerHTML = `
+          ${file.name}: <a href="${fileUrl}" target="_blank">${fileUrl}</a>
+        `;
+
+        document.getElementById("fileList").appendChild(liElement);
+      });
+    </script>
+  </body>
+</html>
